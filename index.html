@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MidiToPiano | MIDI Görselleştirici</title>
+    <meta name="description" content="MIDI dosyalarınızı profesyonel piyano sesiyle görselleştiren ücretsiz web uygulaması.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">🎹</span>
+                <h1>MidiToPiano</h1>
+                <div class="lang-toggle">
+                    <button class="lang-btn active" id="lang-tr-btn">TR</button>
+                    <button class="lang-btn" id="lang-en-btn">EN</button>
+                </div>
+            </div>
+            <p class="subtitle" data-i18n="subtitle">MIDI dosyalarınızı profesyonel piyano sesiyle görselleştirin</p>
+            <div class="sf-switcher">
+                <button class="btn btn-secondary btn-sm" id="sf-change-btn">
+                    <span data-i18n="sfChangeBtn">🎹 SoundFont Değiştir</span>
+                </button>
+                <div class="sf-info">
+                    <span id="sf-name">Nord Romantic Grand</span>
+                </div>
+                <div class="visualizer-settings">
+                    <div class="color-control">
+                        <label for="left-color" data-i18n="leftHandLabel">Sol El (Bas):</label>
+                        <input type="color" id="left-color" value="#6366f1">
+                    </div>
+                    <div class="color-control">
+                        <label for="right-color" data-i18n="rightHandLabel">Sağ El (Tiz):</label>
+                        <input type="color" id="right-color" value="#a855f7">
+                    </div>
+                    <div class="color-control">
+                        <label for="effect-color" data-i18n="effectColorLabel">Efekt Rengi:</label>
+                        <input type="color" id="effect-color" value="#00f2ff">
+                    </div>
+                    <div class="color-control">
+                        <label for="effect-type" style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="effectLabel">Efekt:</label>
+                        <select id="effect-type" class="ui-select">
+                            <option value="none" data-i18n="effectNone">Kapalı</option>
+                            <option value="electric" selected data-i18n="effectElectric">Elektrik</option>
+                            <option value="sparkle" data-i18n="effectSparkle">Parıltı</option>
+                            <option value="trail" data-i18n="effectTrail">Renk İzi</option>
+                            <option value="stardust" data-i18n="effectStardust">Yıldız Tozu</option>
+                        </select>
+                    </div>
+                    <div class="color-control">
+                        <label for="note-style" style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="noteStyleLabel">Nota Stili:</label>
+                        <select id="note-style" class="ui-select">
+                            <option value="classic" selected data-i18n="noteStyleClassic">Klasik</option>
+                            <option value="glass" data-i18n="noteStyleGlass">Cam</option>
+                            <option value="neon" data-i18n="noteStyleNeon">Neon Halka</option>
+                        </select>
+                    </div>
+                    <div class="color-control">
+                        <label for="color-mode" style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="colorModeLabel">Renk Modu:</label>
+                        <select id="color-mode" class="ui-select">
+                            <option value="fixed" selected data-i18n="colorModeFixed">Sabit El</option>
+                            <option value="dynamic" data-i18n="colorModeDynamic">Dinamik</option>
+                        </select>
+                    </div>
+                    <div class="color-control" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <label for="effect-intensity"
+                            style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="intensityLabel">Yoğunluk:</label>
+                        <input type="range" id="effect-intensity" min="0" max="1" step="0.1" value="0.5"
+                            style="width: 80px;">
+                    </div>
+                </div>
+                <input type="file" id="sf-input" accept=".sf2" style="display: none">
+            </div>
+        </header>
+
+        <main>
+            <section class="upload-section" id="drop-zone">
+                <input type="file" id="file-input" accept=".mid,.midi" multiple style="display: none">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <h3 data-i18n="dropZoneTitle">MIDI (.mid) Dosyasını Buraya Sürükleyin</h3>
+                    <p data-i18n="dropZoneSubtitle">veya dosyayı seçmek için tıklayın</p>
+                    <button class="btn btn-primary" id="select-btn" data-i18n="selectBtnText">Dosya Seç</button>
+                    <p style="margin-top:20px; font-size: 0.9rem; color: var(--text-muted)" data-i18n="playlistHint">Toplu seçim yaparak playlist
+                        oluşturabilirsiniz.</p>
+                </div>
+            </section>
+
+            <section class="player-section hidden" id="player-controls">
+                <div class="file-info">
+                    <span class="file-name" id="display-name">Nuvole Bianche.mid</span>
+                    <span class="file-status" id="load-status">Yükleniyor...</span>
+                    <span class="recording-badge hidden" id="recording-status" data-i18n="recordingBadge">● KAYDEDİLİYOR</span>
+                </div>
+
+                <div class="progress-container">
+                    <input type="range" id="progress-bar" min="0" max="100" value="0">
+                    <div class="time-display">
+                        <span id="current-time">00:00</span>
+                        <span id="duration">00:00</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="prev-btn" data-i18n-title="prevSongTitle" title="Önceki Şarkı">⏮</button>
+                    <button class="control-btn" id="stop-btn" data-i18n-title="stopTitle" title="Durdur">⏹</button>
+                    <button class="control-btn play-btn" id="play-pause-btn" data-i18n-title="playPauseTitle" title="Oynat/Duraklat">▶</button>
+                    <button class="control-btn" id="reset-btn" data-i18n-title="resetTitle" title="Başa Dön">🔄</button>
+                    <button class="control-btn" id="next-btn" data-i18n-title="nextSongTitle" title="Sonraki Şarkı">⏭</button>
+
+                    <div class="volume-container">
+                        <span id="volume-icon">🔊</span>
+                        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.9">
+                    </div>
+
+                    <button class="btn btn-secondary btn-sm" id="download-video-btn" style="margin-left: 15px;">
+                        <span data-i18n="downloadVideoBtn">🎥 Video İndir</span>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="new-file-btn" style="margin-left: 15px;">
+                        <span data-i18n="newFileBtn">📁 Yeni Seç</span>
+                    </button>
+
+                    <div class="video-settings-trigger" id="video-settings-btn" data-i18n-title="videoSettingsTitle" title="Video Ayarları">⚙️</div>
+
+                    <div class="video-settings-panel hidden" id="video-settings-panel">
+                        <div class="setting-group">
+                            <label for="export-res" data-i18n="resolutionLabel">Çözünürlük:</label>
+                            <select id="export-res">
+                                <option value="1080">1920x1080 (Full HD)</option>
+                                <option value="720" selected>1280x720 (HD)</option>
+                                <option value="480">854x480 (SD)</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label for="export-fps" data-i18n="fpsLabel">FPS:</label>
+                            <select id="export-fps">
+                                <option value="60">60 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="24">24 FPS</option>
+                            </select>
+                        </div>
+                        <div class="setting-group">
+                            <label for="export-sync" style="white-space: nowrap;" data-i18n="syncOffsetLabel">Senkron Kayması (ms):</label>
+                            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                                <input type="range" id="export-sync" min="-1000" max="1000" step="10" value="0" style="flex: 1;">
+                                <span id="sync-val" style="min-width: 45px; font-size: 0.8rem; color: var(--text-muted);">0ms</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="piano-viewer">
+                <div class="visualizer-container">
+                    <canvas id="note-canvas"></canvas>
+                    <div class="piano-container" id="piano-keyboard">
+                        <!-- Piano keys will be generated via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <section class="library-section">
+                <div class="section-header">
+                    <h3 data-i18n="libraryTitle">🎹 Notalarım (Kayıtlı MIDI'ler)</h3>
+                    <button class="btn btn-secondary btn-sm" id="refresh-library-btn" data-i18n="refreshLibraryBtn">Yenile</button>
+                </div>
+                <div class="library-list" id="library-list">
+                    <p class="empty-msg" data-i18n="emptyLibraryMsg">Henüz kayıtlı nota yok.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p data-i18n="footerText">© 2026 MidiToPiano - Profesyonel MIDI Görselleştirici</p>
+        </footer>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="overlay hidden" id="loading-overlay">
+        <div class="spinner"></div>
+        <p data-i18n="loadingSoundFont">SoundFont Yükleniyor...</p>
+    </div>
+
+    <!-- Rendering overlay -->
+    <div class="overlay hidden" id="rendering-overlay">
+        <div class="render-box">
+            <div class="spinner"></div>
+            <h3 data-i18n="renderingTitle">Video Hazırlanıyor...</h3>
+            <p data-i18n="renderingSubtitle">Bu işlem biraz zaman alabilir, lütfen bekleyin.</p>
+            <div class="render-progress-container">
+                <div class="render-progress-bar" id="render-progress"></div>
+            </div>
+            <span id="render-percentage">0%</span>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,7 @@
+node_modules/
+electron-app/node_modules/
+dist/
+uploads/
+midi_library/
+*.zip
+.DS_Store
